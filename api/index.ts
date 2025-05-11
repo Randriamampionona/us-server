@@ -13,7 +13,7 @@ const ORIGIN = process.env.ORIGIN!;
 const io = new Server(server, {
   cors: {
     origin: ORIGIN,
-    methods: ["GET", "DELETE", "PUT", "POST"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
   },
 });
 
@@ -21,24 +21,16 @@ app.get("/", (_req, res) => {
   res.send("<h1>Us Server! 💕</h1>");
 });
 
-const onlineUsers = new Map<string, string>(); // userId -> socket.id
-
 io.on("connection", (socket) => {
-  // User sends their ID
-  socket.on("user:connect", (userId: string) => {
-    socket.data.userId = userId;
-    onlineUsers.set(userId, socket.id);
+  console.log(`Connected to socket: ${socket.id}`);
 
-    // Notify the user's friends (e.g., a specific other user) they are online
-    socket.broadcast.emit("user:status", { userId, isOnline: true });
+  socket.on("status", (_data) => {
+    socket.broadcast.emit("status:set", true);
   });
 
   socket.on("disconnect", () => {
-    const userId = socket.data.userId;
-    if (userId) {
-      onlineUsers.delete(userId);
-      socket.broadcast.emit("user:status", { userId, isOnline: false });
-    }
+    console.log(`Disconnected to socket: ${socket.id}`);
+    socket.broadcast.emit("status:set", false);
   });
 });
 
